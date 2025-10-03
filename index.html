@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Toolkit</title>
+    <link href="output.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
+</head>
+
+<body class="loading">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay"
+        class="fixed inset-0 bg-primary-bg z-[9999] flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out">
+        <div class="pokeball-loader">
+            <div class="pokeball-button"></div>
+        </div>
+        <p class="mt-4 text-lg font-semibold text-text-dark">Loading Pokémon Data...</p>
+    </div>
+    <div id="notification-container" class="fixed top-5 right-24 z-[5000] flex flex-col gap-3"></div>
+    <!-- New Standalone Theme Toggle Button -->
+    <button id="theme-toggle-btn"
+        class="fixed top-5 right-5 z-[5000] w-12 h-12 rounded-full bg-secondary-bg flex items-center justify-center shadow-lg hover:bg-tertiary-bg transition-colors"
+        aria-label="Toggle Theme" data-tippy-content="Toggle Theme">
+        <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+        </svg>
+        <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="w-6 h-6 hidden">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+        </svg>
+    </button>
+    <div id="sidebar-overlay" class="hidden md:hidden"></div>
+
+    <!-- Modals -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black/50 z-[4500] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <p id="confirmation-message" class="mb-6 text-lg">Are you sure?</p>
+            <div class="flex gap-4"><button id="confirm-no-btn"
+                    class="w-full p-2 bg-tertiary-bg rounded">No</button><button id="confirm-yes-btn"
+                    class="w-full p-2 bg-red-600 text-white rounded">Yes</button></div>
+        </div>
+    </div>
+    <!-- Input Modal -->
+    <div id="input-modal" class="fixed inset-0 bg-black/50 z-[4500] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <p id="input-modal-message" class="mb-4 text-lg font-semibold">Enter value:</p>
+            <input type="text" id="input-modal-input" class="w-full mb-4">
+            <div class="flex gap-4">
+                <button id="input-modal-cancel-btn" class="w-full p-2 bg-tertiary-bg rounded">Cancel</button>
+                <button id="input-modal-ok-btn" class="w-full p-2 bg-accent text-white rounded">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="assign-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="assign-modal-title" class="font-bold text-lg">Assign to...</h3><button
+                    id="close-assign-modal-btn" class="text-2xl">&times;</button>
+            </div>
+            <div id="team-selection-list" class="space-y-2"></div>
+        </div>
+    </div>
+    <div id="type-coverage-modal"
+        class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-6xl w-full h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-border-color pb-4">
+                <h3 class="font-bold text-2xl">Team Coverage Analysis</h3><button id="close-coverage-modal-btn"
+                    class="text-3xl">&times;</button>
+            </div>
+            <div id="coverage-output" class="overflow-y-auto flex-grow pr-2"></div>
+        </div>
+    </div>
+    <div id="team-export-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-lg w-full flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl">Export Team</h3><button id="close-export-modal-btn"
+                    class="text-2xl">&times;</button>
+            </div><textarea id="export-textarea"
+                class="w-full h-64 bg-primary-bg border border-border-color rounded p-2 text-sm font-mono"></textarea><button
+                id="copy-export-btn" class="mt-4 p-2 bg-accent rounded text-white font-bold">Copy to Clipboard</button>
+        </div>
+    </div>
+    <div id="move-details-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="move-modal-name" class="font-bold text-2xl capitalize">Move Name</h3><button
+                    id="close-move-modal-btn" class="text-3xl">&times;</button>
+            </div>
+            <div id="move-modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Manual Move Selection Modal -->
+    <div id="manual-move-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-2xl w-full h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="manual-move-modal-title" class="font-bold text-xl">Select Moves</h3><button
+                    id="close-manual-move-modal-btn" class="text-2xl">&times;</button>
+            </div>
+            <div id="manual-move-modal-content" class="overflow-y-auto flex-grow pr-2"></div>
+        </div>
+    </div>
+
+    <!-- Manual Ability Selection Modal -->
+    <div id="manual-ability-modal"
+        class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-lg w-full h-auto max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="manual-ability-modal-title" class="font-bold text-xl">Select Ability</h3><button
+                    id="close-manual-ability-modal-btn" class="text-2xl">&times;</button>
+            </div>
+            <div id="manual-ability-modal-content" class="overflow-y-auto flex-grow pr-2"></div>
+        </div>
+    </div>
+
+    <!-- Manual Item Selection Modal -->
+    <div id="manual-item-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-2xl w-full h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="manual-item-modal-title" class="font-bold text-xl">Select Item</h3><button
+                    id="close-manual-item-modal-btn" class="text-2xl">&times;</button>
+            </div>
+            <input type="search" id="item-search-input" placeholder="Search for an item..."
+                class="w-full bg-primary-bg border border-border-color rounded p-2 mb-4">
+            <div id="manual-item-modal-content" class="overflow-y-auto flex-grow pr-2"></div>
+        </div>
+    </div>
+
+    <!-- Tera Type Selection Modal -->
+    <div id="tera-type-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="tera-type-modal-title" class="font-bold text-xl">Select Tera Type</h2>
+                <button id="close-tera-type-modal-btn" class="text-2xl">&times;</button>
+            </div>
+            <div id="tera-type-modal-content" class="overflow-y-auto flex-grow pr-2">
+                <!-- Tera Type choices will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Nature Selection Modal -->
+    <div id="nature-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="nature-modal-title" class="font-bold text-xl">Select Nature</h2>
+                <button id="close-nature-modal-btn" class="text-2xl">&times;</button>
+            </div>
+            <div id="nature-modal-content" class="overflow-y-auto flex-grow pr-2">
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Import Modal -->
+    <div id="team-import-modal" class="fixed inset-0 bg-black/50 z-[4000] flex items-center justify-center p-4 hidden">
+        <div class="modal-content p-6 rounded-lg shadow-xl max-w-lg w-full flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl">Import from Showdown</h3><button id="close-import-modal-btn"
+                    class="text-2xl">&times;</button>
+            </div><textarea id="import-textarea"
+                class="w-full h-64 bg-primary-bg border border-border-color rounded p-2 text-sm font-mono"
+                placeholder="Paste your Pokémon Showdown team here..."></textarea><button id="import-team-btn"
+                class="mt-4 p-2 bg-accent rounded text-white font-bold">Import</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- App Navigation -->
+        <nav class="app-nav">
+            <button class="app-tab active" data-target="generator-panel" data-view="generator-view"
+                aria-label="Generator" data-tippy-content="Generator">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="team-builder-panel" data-view="team-builder-view"
+                aria-label="Team Builder" data-tippy-content="Team Builder">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="pokedex-panel" data-view="pokedex-view" aria-label="Pokédex"
+                data-tippy-content="Pokédex">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="ability-generator-panel" data-view="ability-generator-view"
+                aria-label="Ability Reroller" data-tippy-content="Ability Reroller">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="move-panel" data-view="move-view" aria-label="Move Generator"
+                data-tippy-content="Move Generator">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M10.5 20.25v-2.25m-5.834.166 1.591-1.591M3.75 10.5H6m-2.25 4.5 1.591-1.591" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="nature-panel" data-view="nature-view" aria-label="Nature Generator"
+                data-tippy-content="Nature Generator">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="wtp-panel" data-view="wtp-view" aria-label="Who's That Pokémon?"
+                data-tippy-content="Who's That Pokémon?">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+            </button>
+            <button class="app-tab" data-target="update-log-panel" data-view="update-log-view" aria-label="Update Log"
+                data-tippy-content="Update Log">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 12h.01M15 12h.01M10.5 16.5h3m-3.75 3.75h3.75M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36a8.936 8.936 0 0 0-2.24-5.19L12 3Z" />
+                </svg>
+            </button>
+            <!-- The class "app-tab" was removed from this button to prevent it from acting like a navigation tab -->
+            <button id="start-tour-btn" class="mt-auto app-tab" aria-label="Help" data-tippy-content="Start Tour">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+            </button>
+            <div class="mt-auto p-2 text-center text-xs text-text-dark">
+                <span id="build-version"></span>
+            </div>
+        </nav>
+
+        <!-- Sidebar -->
+        <aside id="sidebar-main" class="sidebar">
+            <!-- POKEMON GENERATOR PANEL -->
+            <div id="generator-panel" class="sidebar-panel active">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Generator</h2>
+                    <button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <form id="generatorForm" class="sidebar-content">
+                    <div class="form-group">
+                        <label for="count" class="text-sm font-medium text-slate-300 mb-2">How Many?</label>
+                        <input type="number" id="count" name="count" value="1" min="1" max="6" class="w-full">
+                    </div>
+
+                    <details class="filter-group" open>
+                        <summary>Regions</summary>
+                        <div class="p-2 space-y-2 max-h-48 overflow-y-auto">
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="1" checked> Gen I (Kanto)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="2" checked> Gen II (Johto)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="3" checked> Gen III (Hoenn)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="4" checked> Gen IV (Sinnoh)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="5" checked> Gen V (Unova)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="6" checked> Gen VI (Kalos)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="7" checked> Gen VII (Alola)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="8" checked> Gen VIII (Galar/Hisui)</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="gen" value="9" checked> Gen IX (Paldea/Kitakami)</label>
+                        </div>
+                    </details>
+
+                    <details class="filter-group">
+                        <summary>Typing</summary>
+                        <div class="p-2 grid grid-cols-2 gap-2">
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="normal" checked> Normal</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="fire" checked> Fire</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="water" checked> Water</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="grass" checked> Grass</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="electric" checked> Electric</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="ice" checked> Ice</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="fighting" checked> Fighting</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="poison" checked> Poison</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="ground" checked> Ground</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="flying" checked> Flying</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="psychic" checked> Psychic</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="bug" checked> Bug</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="rock" checked> Rock</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="ghost" checked> Ghost</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="dragon" checked> Dragon</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="dark" checked> Dark</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="steel" checked> Steel</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="type" value="fairy" checked> Fairy</label>
+                        </div>
+                    </details>
+
+                    <details class="filter-group">
+                        <summary>Color</summary>
+                        <div class="p-2">
+                            <select id="color-filter" name="color" class="w-full">
+                                <option value="">Any Color</option>
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                    </details>
+
+                    <details class="filter-group">
+                        <summary>Rarity & Forms</summary>
+                        <div class="p-2 space-y-2">
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="include-legendary" checked> Include Legendary</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="include-mythical" checked> Include Mythical</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="force-shiny"> Force Shiny</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="include-forms" checked> Include Alternate Forms</label>
+                        </div>
+                    </details>
+
+                    <details class="filter-group">
+                        <summary>Evolution Stage</summary>
+                        <div class="p-2 space-y-2">
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="evolution-stage" value="nfe" checked> Not Fully Evolved</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="evolution-stage" value="fully-evolved" checked> Fully Evolved</label>
+                        </div>
+                    </details>
+
+                </form>
+                <div class="sidebar-footer grid grid-cols-2"><button type="submit" form="generatorForm"
+                        class="col-span-2">Generate</button></div>
+            </div>
+            <!-- TEAM BUILDER PANEL -->
+            <div id="team-builder-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Team Builder</h2><button class="close-sidebar-btn text-3xl md:hidden">&times;</button>
+                </div>
+                <div class="sidebar-content" id="team-management-content">
+                    <div class="form-group">
+                        <label for="teamNameInput" class="font-bold mb-2">Save Current Team</label>
+                        <div class="flex gap-2"><input type="text" id="teamNameInput" placeholder="Team Name"
+                                class="w-full"><button id="saveTeamBtn" class="p-2 bg-accent rounded">Save</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2">Saved Teams</h3>
+                        <div id="saved-teams-list" class="space-y-1"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- POKEDEX PANEL -->
+            <div id="pokedex-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Pokédex</h2><button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <div class="sidebar-content">
+                    <p class="text-sm text-text-dark">Search for any Pokémon to see its detailed information, evolution
+                        chain, and more.</p>
+                </div>
+            </div>
+            <!-- ABILITY PANEL -->
+            <div id="ability-generator-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Ability Reroller</h2><button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <form id="abilityGeneratorForm" class="sidebar-content">
+                    <div id="ability-reroller-content">
+                        <!-- This will be populated by script.js -->
+                    </div>
+                    <div class="form-group mt-4">
+                        <label for="ability-count" class="font-bold mb-2">How Many?</label>
+                        <input type="number" id="ability-count" value="1" min="1" max="10">
+                    </div>
+                </form>
+            </div>
+            <!-- MOVE PANEL -->
+            <div id="move-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Move Generator</h2><button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <form id="moveGeneratorForm" class="sidebar-content">
+                    <div class="form-group">
+                        <label for="move-count" class="font-bold mb-2">How Many?</label>
+                        <input type="number" id="move-count" value="1" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="move-type-filter" class="font-bold mb-2">Filter by Type</label>
+                        <select id="move-type-filter">
+                            <option value="">Any Type</option>
+                            <!-- Types populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="move-category-filter" class="font-bold mb-2">Filter by Category</label>
+                        <select id="move-category-filter">
+                            <option value="">Any Category</option>
+                            <!-- Categories populated by JS -->
+                        </select>
+                    </div>
+                </form>
+                <div class="sidebar-footer"><button type="submit" form="moveGeneratorForm">Generate</button></div>
+            </div>
+            <!-- NATURE PANEL -->
+            <div id="nature-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Nature Generator</h2><button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <form id="natureGeneratorForm" class="sidebar-content">
+                    <div class="form-group"><label for="nature-count" class="font-bold mb-2">How Many?</label><input
+                            type="number" id="nature-count" value="1" min="1" max="10"></div>
+                    <div class="form-group">
+                        <label for="nature-boost-filter" class="font-bold mb-2">Boosts Stat</label>
+                        <select id="nature-boost-filter">
+                            <option value="">Any</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nature-lower-filter" class="font-bold mb-2">Lowers Stat</label>
+                        <select id="nature-lower-filter">
+                            <option value="">Any</option>
+                        </select>
+                    </div>
+                </form>
+                <div class="sidebar-footer"><button type="submit" form="natureGeneratorForm"
+                        class="w-full">Generate</button></div>
+            </div>
+            <!-- WTP PANEL -->
+            <div id="wtp-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Who's That Pokémon?</h2><button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <div class="sidebar-content">
+                    <p class="text-sm text-text-dark">Test your Pokémon knowledge! Configure your game below and press
+                        "Start Game" in the main view.</p>
+                    <div class="form-group">
+                        <label class="font-bold">Difficulty</label>
+                        <div class="flex gap-4" id="wtp-difficulty-options">
+                            <label class="flex items-center gap-2"><input type="radio" name="wtp-difficulty"
+                                    value="easy" checked> Easy</label>
+                            <label class="flex items-center gap-2"><input type="radio" name="wtp-difficulty"
+                                    value="hard"> Hard</label>
+                        </div>
+                    </div>
+                    <details class="filter-group" open>
+                        <summary>Included Generations</summary>
+                        <div class="p-2 space-y-2 max-h-48 overflow-y-auto" id="wtp-generation-options">
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="1" checked> Gen I</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="2" checked> Gen II</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="3" checked> Gen III</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="4" checked> Gen IV</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="5" checked> Gen V</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="6" checked> Gen VI</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="7" checked> Gen VII</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="8" checked> Gen VIII</label>
+                            <label class="grid grid-cols-[auto_1fr] items-center gap-x-2"><input type="checkbox"
+                                    name="wtp-gen" value="9" checked> Gen IX</label>
+                        </div>
+                    </details>
+                </div>
+                <div class="sidebar-footer">
+                    <p class="text-xs text-text-dark">Hard mode uses Levenshtein distance to allow for minor typos.</p>
+                </div>
+            </div>
+            <!-- UPDATE LOG PANEL -->
+            <div id="update-log-panel" class="sidebar-panel">
+                <div class="sidebar-header flex justify-between items-center">
+                    <h2>Update Log</h2><button class="close-sidebar-btn text-2xl md:hidden">&times;</button>
+                </div>
+                <div class="sidebar-content">
+                    <p class="text-sm text-text-dark">Recent changes and new features are listed in the main view.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- GENERATOR VIEW -->
+            <div id="generator-view" class="main-view active">
+                <div class="flex justify-center mb-8">
+                    <button type="submit" form="generatorForm" class="w-full max-w-xs generic-btn">Generate
+                        Pokémon</button>
+                </div>
+                <div id="initial-state" class="placeholder p-8">
+                    <svg class="placeholder-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                    </svg>
+                    <h3 class="text-xl font-bold">Pokémon Generator</h3>
+                    <p>Use the filters in the sidebar to generate Pokémon!</p>
+                </div>
+                <div id="result-output"
+                    class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 w-full place-items-center"></div>
+            </div>
+            <!-- TEAM BUILDER VIEW -->
+            <div id="team-builder-view" class="main-view">
+                <header class="main-header">
+                    <h1>Current Team</h1>
+                    <div class="mt-4 flex justify-center items-center flex-wrap gap-4">
+                        <button id="analyze-team-btn" class="chip-btn chip-btn-primary">Analyze Team</button>
+                        <div class="flex gap-2">
+                            <button id="random-team-btn" class="chip-btn">Random</button>
+                            <button id="show-import-btn" class="chip-btn">Import</button>
+                            <button id="export-team-btn" class="chip-btn">Export</button>
+                        </div>
+                        <button id="clearTeamBtn" class="chip-btn chip-btn-danger">Clear Team</button>
+                    </div>
+                </header>
+                <div id="team-builder-output" class="space-y-3 max-w-4xl mx-auto"></div>
+            </div>
+
+            <!-- POKEDEX VIEW -->
+            <div id="pokedex-view" class="main-view">
+                <form id="pokedexForm" class="max-w-2xl mx-auto mb-8 flex gap-2">
+                    <input type="search" id="pokedexSearch" placeholder="Search by Name or Number (e.g., Pikachu or 25)"
+                        class="flex-grow">
+                    <button type="submit" class="generic-btn">Search</button>
+                </form>
+                <div id="pokedex-card-container"></div>
+                <div id="evolution-chain-container" class="mt-8"></div>
+            </div>
+            <!-- ABILITY VIEW -->
+            <div id="ability-generator-view" class="main-view">
+                <header class="main-header">
+                    <h1>Ability Reroller</h1>
+                    <p>Select a Pokémon from your team in the sidebar to find new abilities for it.</p>
+                    <div class="mt-4 flex justify-center flex-wrap gap-2">
+                        <button type="submit" form="abilityGeneratorForm" id="reroll-ability-btn"
+                            class="generic-btn">Reroll Ability</button>
+                    </div>
+                </header>
+                <div id="ability-result-output" class="w-full max-w-md mx-auto">
+                    <!-- Reroll result will appear here -->
+                </div>
+            </div>
+            <!-- MOVE VIEW -->
+            <div id="move-view" class="main-view">
+                <header class="main-header">
+                    <h1>Move Randomizer</h1>
+                    <p>Generate random moves.</p>
+                    <div class="mt-4 flex justify-center flex-wrap gap-2"><button type="submit" form="moveGeneratorForm"
+                            class="generic-btn">Generate Moves</button></div>
+                </header>
+                <div id="move-result-output"
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl mx-auto"></div>
+            </div>
+            <!-- NATURE VIEW -->
+            <div id="nature-view" class="main-view">
+                <header class="main-header">
+                    <h1>Nature Randomizer</h1>
+                    <p>Explore random Pokémon natures.</p>
+                </header>
+                <div id="nature-result-output"
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl mx-auto"></div>
+            </div>
+            <!-- WTP VIEW -->
+            <div id="wtp-view" class="main-view">
+                <header class="main-header">
+                    <h1>Who's That Pokémon?</h1>
+                    <p>Current Score: <span id="wtp-score">0</span> | High Score: <span id="wtp-high-score">0</span></p>
+                </header>
+                <div id="wtp-start-screen" class="text-center">
+                    <div class="placeholder p-8">
+                        <h3 class="text-xl font-bold">Ready to Play?</h3>
+                        <p class="text-text-dark mb-4">Configure your game in the sidebar, then press Start!</p>
+                        <button id="wtp-start-game-btn" class="generic-btn">Start Game</button>
+                    </div>
+                </div>
+                <div id="wtp-game-area" class="text-center hidden"></div>
+                <div id="wtp-end-screen" class="text-center hidden"></div>
+            </div>
+            <!-- UPDATE LOG VIEW -->
+            <div id="update-log-view" class="main-view">
+                <header class="main-header">
+                    <h1>Update Log</h1>
+                    <p>A summary of recent changes and new features.</p>
+                </header>
+                <div class="max-w-4xl mx-auto space-y-8">
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.7 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-red-500">[FIX]</strong> Fixed a bug that caused the "Random Team"
+                                generator to fail due to an error in the rarity filter.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.6 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-red-500">[FIX]</strong> Fixed a bug in the Pokémon Generator that
+                                caused an error when filtering by evolution stage. The generator is now fully
+                                functional again.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.5 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-red-500">[FIX]</strong> Fixed a bug in the Pokémon Generator that
+                                caused an error when no specific generation was selected.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.4 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[IMPROVED]</strong> Replaced the annoying browser `prompt()`
+                                for editing nicknames with a custom, styled modal for a smoother user experience.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.3 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[IMPROVED]</strong> Finalized the transition to a static
+                                stylesheet, removing the Tailwind CSS build process.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> Implemented dark mode styles directly in
+                                the static CSS and adjusted the theme toggle button position.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.2 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[IMPROVED]</strong> The theme toggle button is now a
+                                standalone, floating utility button, separate from the main navigation.</li>
+                            <li><strong class="text-red-500">[FIX]</strong> Corrected the `tailwind.config.js` to
+                                properly enable class-based dark mode.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.1 <span
+                                class="text-sm font-normal text-text-dark">- May 21, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[NEW]</strong> Added a Dark Mode theme! The app will now
+                                respect your system's theme preference by default.</li>
+                            <li><strong class="text-accent">[NEW]</strong> Added a theme toggle button to the main
+                                navigation to switch between light and dark modes manually.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.3.0 <span
+                                class="text-sm font-normal text-text-dark">- May 20, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-red-500">[FIX]</strong> The Pokémon Generator's "Regions" filter now
+                                correctly includes alternate forms (e.g., Alolan Raichu) when filtering by the
+                                generation they were introduced in.</li>
+                            <li><strong class="text-red-500">[FIX]</strong> The Pokédex number on generated cards now
+                                correctly displays the species' National Pokédex number, not the form's internal ID.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.2.0 <span
+                                class="text-sm font-normal text-text-dark">- May 20, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[NEW]</strong> Added a "Force Shiny" option to the main
+                                Pokémon Generator.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> Overhauled the drag-and-drop reordering
+                                for the Team Builder to be smoother and more reliable.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> The stat editor now includes EV sliders,
+                                quick-set buttons, and a visual EV investment bar.</li>
+                            <li><strong class="text-red-500">[FIX]</strong> The Pokémon Generator filter now correctly
+                                includes all Pokémon species from all generations.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.1.0 <span
+                                class="text-sm font-normal text-text-dark">- May 20, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[NEW]</strong> You can now give your team members
+                                nicknames! Click on a Pokémon's name in the Team Builder to edit it.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> The "Add to Team" button on Pokédex
+                                cards now works, allowing you to add Pokémon directly from your search results.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> The Team Member card UI has been
+                                updated to support nicknames and improve layout.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.0.1 <span
+                                class="text-sm font-normal text-text-dark">- May 20, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-red-500">[FIX]</strong> Fixed a critical bug where initial
+                                application data (precache.json) failed to load due to missing move data.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> The data pre-caching script now
+                                correctly
+                                includes detailed move information to support the enhanced Move Generator filters.</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-secondary-bg border border-border-color rounded-lg">
+                        <h3 class="font-bold text-xl mb-2">Build v2.0.0 <span
+                                class="text-sm font-normal text-text-dark">- May 20, 2024</span></h3>
+                        <ul class="list-disc list-inside space-y-2 text-text-light">
+                            <li><strong class="text-accent">[NEW]</strong> Added this Update Log to track new features
+                                and changes.</li>
+                            <li><strong class="text-accent">[NEW]</strong> Added a build version number to the bottom of
+                                the sidebar.</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> The Move Generator can now be filtered
+                                by
+                                move type (Fire, Water, etc.) and category (Physical, Special, Status).</li>
+                            <li><strong class="text-accent">[IMPROVED]</strong> The Nature Generator can now be filtered
+                                by which stats are boosted or lowered.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
+    <!-- Custom Scripts -->
+    <script src="assets/script.js" type="module"></script>
+</body>
+
+</html>
